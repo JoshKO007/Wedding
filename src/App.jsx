@@ -10,8 +10,11 @@ const FECHA_EVENTO_ISO = '2025-11-15T17:00:00-06:00'; // 5:00 PM (America/Mexico
 const HERO_BG =
   'https://images.unsplash.com/photo-1519741497674-611481863552?w=2000&auto=format&fit=crop';
 
-const fechaStr = 'Sábado 15 de Noviembre de 2025 · 5:00 PM';
-const lugarStr = 'Hacienda Las Palmas, Morelos';
+const fechaStr = '2nd May, 2026 · 4:00 PM';
+const ceremonia = 'Ceremony'
+const lugarStr = 'Église orthodoxe d´Antioche de la Vierge Marie';
+const comida = 'Dinner'
+const lugarCena = 'Le Mitoyen'
 
 const fotos = [
   { src: 'https://images.unsplash.com/photo-1559599101-f09722fb4948?w=1600&auto=format&fit=crop', caption: 'Primera cita', rotate: -4 },
