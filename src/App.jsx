@@ -79,13 +79,13 @@ export default function App() {
 
 // === Links EXACTOS provistos ===
 const CEREMONIA_LINKS = {
-  waze: 'https://waze.com/ul/hf25e5s8dy',
+  waze: 'https://www.waze.com/en/live-map/directions?latlng=45.55276862565579%2C-73.67359272713658',
   apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
   gmaps: 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
 };
 
 const CENA_LINKS = {
-  waze: 'https://waze.com/ul/hf25e00jxd',
+  waze: 'https://www.waze.com/en/live-map/directions/le-mitoyen.-restaurant-rue-de-la-place-publique-652-laval?latlng=45.52862908058713%2C-73.8205933570862',
   apple: 'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore',
   gmaps: 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
 };
