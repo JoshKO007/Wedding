@@ -79,7 +79,7 @@ export default function App() {
 
 // === Links EXACTOS provistos ===
 const CEREMONIA_LINKS = {
-  waze: 'https://ul.waze.com/ul?ll=45.55257033%2C-73.67338300&navigate=yes&zoom=17&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location',
+  waze: 'waze://?ll=45.55251023,-73.67336154&navigate=yes',
   apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
   gmaps: 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
 };
