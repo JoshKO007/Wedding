@@ -77,41 +77,62 @@ export default function App() {
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const toMaps = () => scrollTo('mapa');
 
-// === Ubicaciones ===
-const CEREMONIA_LABEL = `Église orthodoxe d'Antioche de la Vierge Marie`;
-const CEREMONIA_GMAPS = 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc';
+// ====== Ubicaciones (coords y URLs exactas) ======
+const CEREMONIA = {
+  label: `Église orthodoxe d'Antioche de la Vierge Marie`,
+  coords: { lat: 45.552677, lng: -73.673486 },
+  gmaps: 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
+  apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure'
+};
 
-const CENA_LABEL = 'Le Mitoyen';
-const CENA_GMAPS = 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc';
+const CENA = {
+  label: 'Le Mitoyen',
+  coords: { lat: 45.528607, lng: -73.820470 },
+  gmaps: 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
+  apple: 'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore'
+};
 
-// Abre la ubicación según plataforma:
-// - Desktop: abre Google Maps (ahí puedes "Guardar")
-// - Android: intenta abrir la app de Google Maps
-// - iOS (iPhone/iPad): abre Apple Maps
-const openLocation = (label, gmapsUrl) => {
+// ====== Abrir ubicación priorizando Waze en móviles ======
+// Intento abrir waze:// y si no existe la app, hacemos fallback.
+// iOS -> Apple Maps (URL completa que me pasaste)
+// Android -> Google Maps
+// Desktop -> Google Maps (nueva pestaña)
+const openLocationSmart = ({ label, coords, gmaps, apple }) => {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /android/i.test(ua);
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  if (isAndroid) {
-    // Intentar abrir la app con el link compartido
-    window.location.href = gmapsUrl;
+  const wazeURL = coords
+    ? `waze://?ll=${coords.lat},${coords.lng}&navigate=yes`
+    : `waze://?q=${encodeURIComponent(label)}&navigate=yes`;
+
+  // Desktop → Google Maps
+  if (!isAndroid && !isIOS) {
+    window.open(gmaps, '_blank');
     return;
   }
 
-  if (isIOS) {
-    // Apple Maps con el nombre del lugar (más fiable como app predeterminada)
-    const encoded = encodeURIComponent(label);
-    window.location.href = `http://maps.apple.com/?q=${encoded}`;
-    return;
-  }
+  // Móviles: probamos Waze con fallback por timeout
+  const start = Date.now();
+  const fallback = () => {
+    if (Date.now() - start < 1600) {
+      if (isIOS) {
+        // Apple Maps con tu URL completa
+        window.location.href = apple || `http://maps.apple.com/?q=${encodeURIComponent(label)}`;
+      } else {
+        // Android → Google Maps
+        window.location.href = gmaps;
+      }
+    }
+  };
 
-  // Desktop (PC/Mac): Google Maps en nueva pestaña (desde ahí puedes "Guardar")
-  window.open(gmapsUrl, '_blank');
+  // Intentar Waze
+  window.location.href = wazeURL;
+  // Si falla (no hay app), el navegador no cambia y entrará el fallback
+  setTimeout(fallback, 1200);
 };
-
 
 
   return (
@@ -280,7 +301,7 @@ const openLocation = (label, gmapsUrl) => {
     <p className="mt-3 text-sm text-stone-700">Eglise Orthodoxe d'Antioche</p>
 
 <button
-  onClick={() => openLocation(CEREMONIA_LABEL, CEREMONIA_GMAPS)}
+  onClick={() => openLocationSmart(CEREMONIA)}
   className="btn-primary mt-3 inline-flex items-center gap-2"
   aria-label="Guardar ubicación de la ceremonia"
 >
@@ -289,6 +310,7 @@ const openLocation = (label, gmapsUrl) => {
   </svg>
   Guardar ubicación
 </button>
+
 
   </div>
     {/* Comida */}
@@ -309,7 +331,7 @@ const openLocation = (label, gmapsUrl) => {
 
 {/* Botón Guardar ubicación */}
 <button
-  onClick={() => openLocation(CENA_LABEL, CENA_GMAPS)}
+  onClick={() => openLocationSmart(CENA)}
   className="btn-primary mt-3 inline-flex items-center gap-2"
   aria-label="Guardar ubicación de la cena"
 >
@@ -318,6 +340,7 @@ const openLocation = (label, gmapsUrl) => {
   </svg>
   Guardar ubicación
 </button>
+
 
 </div>
 </div>
@@ -410,7 +433,7 @@ Mensaje: ${data.get('mensaje')}`
                   />
                 </div>
                 <div className="grid gap-2 text-left">
-                  <label className="text-sm text-stone-600">Mensaje</label>
+                  <label className="text-sm text-stone-600">Mensaje para los novios</label>
                   <textarea
                     name="mensaje"
                     rows="3"
