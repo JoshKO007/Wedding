@@ -36,5 +36,16 @@
   }
   .polaroid .caption {
     @apply mt-2 text-center text-sm text-slate-600;
+  } 
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(720deg); /* Más rotación para un efecto divertido */
+    opacity: 0;
   }
 }
