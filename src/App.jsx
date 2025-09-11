@@ -77,61 +77,55 @@ export default function App() {
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const toMaps = () => scrollTo('mapa');
 
-// ====== Ubicaciones (coords y URLs exactas) ======
-const CEREMONIA = {
-  label: `Église orthodoxe d'Antioche de la Vierge Marie`,
-  coords: { lat: 45.552677, lng: -73.673486 },
+// === Links EXACTOS provistos ===
+const CEREMONIA_LINKS = {
+  waze: 'https://waze.com/ul/hf25e5s8dy',
+  apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
   gmaps: 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
-  apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure'
 };
 
-const CENA = {
-  label: 'Le Mitoyen',
-  coords: { lat: 45.528607, lng: -73.820470 },
+const CENA_LINKS = {
+  waze: 'https://waze.com/ul/hf25e00jxd',
+  apple: 'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore',
   gmaps: 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
-  apple: 'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore'
 };
 
-// ====== Abrir ubicación priorizando Waze en móviles ======
-// Intento abrir waze:// y si no existe la app, hacemos fallback.
-// iOS -> Apple Maps (URL completa que me pasaste)
-// Android -> Google Maps
-// Desktop -> Google Maps (nueva pestaña)
-const openLocationSmart = ({ label, coords, gmaps, apple }) => {
+// === Abrir ubicación priorizando Waze; en móviles SIEMPRE apps ===
+const openLocationStrict = ({ waze, apple, gmaps }) => {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /android/i.test(ua);
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
 
-  const wazeURL = coords
-    ? `waze://?ll=${coords.lat},${coords.lng}&navigate=yes`
-    : `waze://?q=${encodeURIComponent(label)}&navigate=yes`;
-
-  // Desktop → Google Maps
+  // Desktop → Google Maps web
   if (!isAndroid && !isIOS) {
     window.open(gmaps, '_blank');
     return;
   }
 
-  // Móviles: probamos Waze con fallback por timeout
-  const start = Date.now();
-  const fallback = () => {
-    if (Date.now() - start < 1600) {
-      if (isIOS) {
-        // Apple Maps con tu URL completa
-        window.location.href = apple || `http://maps.apple.com/?q=${encodeURIComponent(label)}`;
-      } else {
-        // Android → Google Maps
-        window.location.href = gmaps;
-      }
-    }
+  // Móviles: intentar abrir Waze; si no abre, fallback a la app nativa
+  let appOpened = false;
+  const onVis = () => {
+    if (document.hidden) appOpened = true; // el navegador pasó a 2º plano → se abrió app
   };
+  document.addEventListener('visibilitychange', onVis);
 
-  // Intentar Waze
-  window.location.href = wazeURL;
-  // Si falla (no hay app), el navegador no cambia y entrará el fallback
-  setTimeout(fallback, 1200);
+  // 1) Intento Waze (con tu link exacto)
+  window.location.href = waze;
+
+  // 2) Fallback tras ~1.2s si Waze no abrió
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onVis);
+    if (appOpened) return; // Waze abrió, no hacer nada
+    if (isIOS) {
+      // iPhone/iPad → Apple Maps (tu URL exacta)
+      window.location.href = apple;
+    } else {
+      // Android → Google Maps (tu URL exacta)
+      window.location.href = gmaps;
+    }
+  }, 1200);
 };
 
 
@@ -301,7 +295,7 @@ const openLocationSmart = ({ label, coords, gmaps, apple }) => {
     <p className="mt-3 text-sm text-stone-700">Eglise Orthodoxe d'Antioche</p>
 
 <button
-  onClick={() => openLocationSmart(CEREMONIA)}
+  onClick={() => openLocationStrict(CEREMONIA_LINKS)}
   className="btn-primary mt-3 inline-flex items-center gap-2"
   aria-label="Guardar ubicación de la ceremonia"
 >
@@ -331,7 +325,7 @@ const openLocationSmart = ({ label, coords, gmaps, apple }) => {
 
 {/* Botón Guardar ubicación */}
 <button
-  onClick={() => openLocationSmart(CENA)}
+  onClick={() => openLocationStrict(CENA_LINKS)}
   className="btn-primary mt-3 inline-flex items-center gap-2"
   aria-label="Guardar ubicación de la cena"
 >
