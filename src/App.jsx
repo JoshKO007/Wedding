@@ -77,55 +77,76 @@ export default function App() {
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const toMaps = () => scrollTo('mapa');
 
-// === Links EXACTOS provistos ===
+
 const CEREMONIA_LINKS = {
-  waze: 'waze://?ll=45.55251023,-73.67336154&navigate=yes',
-  apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
-  gmaps: 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
+  wazeDeep:  'waze://?ll=45.552677,-73.673486&navigate=yes', // abre Waze app directamente
+  wazeShare: 'https://waze.com/ul/hf25e5s8dy',               // tu link compartido de Waze (2º intento)
+  apple:     'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
+  gmaps:     'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
 };
 
+// Cena (Le Mitoyen)
 const CENA_LINKS = {
-  waze: 'hhttps://ul.waze.com/ul?ll=45.52862908%2C-73.82059336&navigate=yes&zoom=17&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location',
-  apple: 'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore',
-  gmaps: 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
+  wazeDeep:  'waze://?ll=45.528607,-73.820470&navigate=yes',
+  wazeShare: 'https://waze.com/ul/hf25e00jxd',
+  apple:     'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore',
+  gmaps:     'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
 };
 
-// === Abrir ubicación priorizando Waze; en móviles SIEMPRE apps ===
-const openLocationStrict = ({ waze, apple, gmaps }) => {
+// ---- Abrir ubicación: Waze ➜ (si falla) Apple/Google app. Desktop: Google Maps web. ----
+const openLocation = ({ wazeDeep, wazeShare, apple, gmaps }) => {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
-  const isAndroid = /android/i.test(ua);
+  const isAndroid =
+    /android/i.test(ua) ||
+    (navigator.userAgentData && navigator.userAgentData.platform === 'Android');
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // Desktop → Google Maps web
+  // helper: navega como “click real” del usuario
+  const openByAnchor = (url, targetSelf = true) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = targetSelf ? '_self' : '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  // Desktop → pestaña nueva a Google Maps (web)
   if (!isAndroid && !isIOS) {
-    window.open(gmaps, '_blank');
+    openByAnchor(gmaps, false);
     return;
   }
 
-  // Móviles: intentar abrir Waze; si no abre, fallback a la app nativa
+  // En móviles: probar Waze; si no abre, fallback a app nativa del SO (NO web).
   let appOpened = false;
-  const onVis = () => {
-    if (document.hidden) appOpened = true; // el navegador pasó a 2º plano → se abrió app
-  };
-  document.addEventListener('visibilitychange', onVis);
+  const onVis = () => { if (document.hidden) appOpened = true; };
+  document.addEventListener('visibilitychange', onVis, { once: true });
 
-  // 1) Intento Waze (con tu link exacto)
-  window.location.href = waze;
+  // 1) Waze deep link (abre app directa y evita 401 de ul.waze.com)
+  openByAnchor(wazeDeep, true);
 
-  // 2) Fallback tras ~1.2s si Waze no abrió
+  // 2) Si no abrió, intentar tu link compartido de Waze (también suele saltar a la app)
+  setTimeout(() => {
+    if (appOpened) return;
+    openByAnchor(wazeShare, true);
+  }, 450);
+
+  // 3) Si aún no, fallback definitivo a la app nativa del SO
   setTimeout(() => {
     document.removeEventListener('visibilitychange', onVis);
-    if (appOpened) return; // Waze abrió, no hacer nada
+    if (appOpened) return;
     if (isIOS) {
-      // iPhone/iPad → Apple Maps (tu URL exacta)
-      window.location.href = apple;
+      // Apple Maps (tu URL exacta abre la APP)
+      openByAnchor(apple, true);
     } else {
-      // Android → Google Maps (tu URL exacta)
-      window.location.href = gmaps;
+      // Android → Google Maps (tu URL exacta; si está instalada, abre la APP)
+      openByAnchor(gmaps, true);
     }
-  }, 1200);
+  }, 1100);
 };
 
 
