@@ -90,13 +90,29 @@ const CENA_LINKS = {
   gmaps: 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
 };
 
-// === Abrir ubicación priorizando Waze; en móviles SIEMPRE apps ===
-const openLocationStrict = ({ waze, apple, gmaps }) => {
+// ---- util: sacar lat/lng y name del link de Apple (que tú diste) ----
+const parseAppleLink = (appleUrl) => {
+  try {
+    const u = new URL(appleUrl);
+    const name = u.searchParams.get('name') || u.searchParams.get('address') || '';
+    const coord = u.searchParams.get('coordinate') || '';
+    const [latStr, lngStr] = coord.split(',');
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng, name };
+    }
+  } catch {}
+  return { lat: null, lng: null, name: '' };
+};
+
+// ---- abrir: Waze primero; si no abre, apps nativas; en desktop: web ----
+const openLocationMobileApps = ({ waze, apple, gmaps }) => {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /android/i.test(ua);
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   // Desktop → Google Maps web
   if (!isAndroid && !isIOS) {
@@ -104,26 +120,45 @@ const openLocationStrict = ({ waze, apple, gmaps }) => {
     return;
   }
 
-  // Móviles: intentar abrir Waze; si no abre, fallback a la app nativa
+  // Construimos deep links con los datos del link de Apple (ya los pasaste)
+  const { lat, lng, name } = parseAppleLink(apple);
+  const encodedName = encodeURIComponent(name || '');
+
+  // Preferimos deep link directo a app de Waze
+  const wazeDeep = (lat && lng)
+    ? `waze://?ll=${lat},${lng}&navigate=yes`
+    : `waze://?q=${encodedName}&navigate=yes`;
+
+  // Fallbacks a apps nativas (NO web en móviles)
+  const iosAppleMaps = (lat && lng)
+    ? `maps://?daddr=${lat},${lng}&q=${encodedName}`
+    : `maps://?q=${encodedName}`;
+
+  const androidGeo = (lat && lng)
+    ? `geo:${lat},${lng}?q=${lat},${lng}(${encodedName})`
+    : `geo:0,0?q=${encodedName}`;
+
+  // Detectar si Waze se abrió (el navegador pasa a segundo plano)
   let appOpened = false;
-  const onVis = () => {
-    if (document.hidden) appOpened = true; // el navegador pasó a 2º plano → se abrió app
+  const onVis = () => { if (document.hidden) appOpened = true; };
+  document.addEventListener('visibilitychange', onVis, { once: true });
+
+  // 1) Intento abrir Waze con esquema (app). Si el navegador no cambia, probamos el link web de Waze (también salta a la app).
+  const tryWaze = () => {
+    window.location.href = wazeDeep;
+    setTimeout(() => { if (!appOpened) window.location.href = waze; }, 350);
   };
-  document.addEventListener('visibilitychange', onVis);
 
-  // 1) Intento Waze (con tu link exacto)
-  window.location.href = waze;
+  tryWaze();
 
-  // 2) Fallback tras ~1.2s si Waze no abrió
+  // 2) Si en ~1.2s no abrió Waze → abrir app de mapas nativa del SO
   setTimeout(() => {
+    if (appOpened) return;
     document.removeEventListener('visibilitychange', onVis);
-    if (appOpened) return; // Waze abrió, no hacer nada
     if (isIOS) {
-      // iPhone/iPad → Apple Maps (tu URL exacta)
-      window.location.href = apple;
+      window.location.href = iosAppleMaps;     // Apple Maps (APP)
     } else {
-      // Android → Google Maps (tu URL exacta)
-      window.location.href = gmaps;
+      window.location.href = androidGeo;       // Google Maps / predet. (APP)
     }
   }, 1200);
 };
