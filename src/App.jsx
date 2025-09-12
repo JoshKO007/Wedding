@@ -78,21 +78,30 @@ export default function App() {
   const toMaps = () => scrollTo('mapa');
 
 
-const CEREMONIA_LINKS = {
-  wazeDeep:  'waze://?ll=45.552677,-73.673486&navigate=yes', // abre Waze app directamente
-  apple:     'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
-  gmaps:     'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
+/* =========================
+   ENLACES Y HELPER (sin Waze)
+   ========================= */
+
+// — Enlaces EXACTOS que ya tienes + coords para deep links (fallback a app)
+const CEREMONIA = {
+  label: `Église orthodoxe d'Antioche de la Vierge Marie`,
+  lat: 45.552677,
+  lng: -73.673486,
+  apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
+  gmaps: 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
 };
 
-// Cena (Le Mitoyen)
-const CENA_LINKS = {
-  wazeDeep:  'waze://?ll=45.528607,-73.820470&navigate=yes',
-  apple:     'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore',
-  gmaps:     'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
+const CENA = {
+  label: 'Le Mitoyen',
+  lat: 45.528607,
+  lng: -73.820470,
+  apple: 'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore',
+  gmaps: 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
 };
 
-// ---- Abrir ubicación: Waze ➜ (si falla) Apple/Google app. Desktop: Google Maps web. ----
-const openLocation = ({ wazeDeep, wazeShare, apple, gmaps }) => {
+// — Abre la app correspondiente: iOS → Apple Maps, Android → Google Maps,
+//   Desktop → Google Maps (web). Sin Waze.
+const openMapsPreferred = ({ label, lat, lng, apple, gmaps }) => {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid =
     /android/i.test(ua) ||
@@ -101,7 +110,6 @@ const openLocation = ({ wazeDeep, wazeShare, apple, gmaps }) => {
     /iPad|iPhone|iPod/.test(ua) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // helper: navega como “click real” del usuario
   const openByAnchor = (url, targetSelf = true) => {
     const a = document.createElement('a');
     a.href = url;
@@ -113,39 +121,47 @@ const openLocation = ({ wazeDeep, wazeShare, apple, gmaps }) => {
     a.remove();
   };
 
-  // Desktop → pestaña nueva a Google Maps (web)
+  // Desktop → Google Maps web
   if (!isAndroid && !isIOS) {
     openByAnchor(gmaps, false);
     return;
   }
 
-  // En móviles: probar Waze; si no abre, fallback a app nativa del SO (NO web).
+  // Detectar si una app se abrió (el navegador pasa a 2º plano)
   let appOpened = false;
   const onVis = () => { if (document.hidden) appOpened = true; };
   document.addEventListener('visibilitychange', onVis, { once: true });
 
-  // 1) Waze deep link (abre app directa y evita 401 de ul.waze.com)
-  openByAnchor(wazeDeep, true);
+  const encodedName = encodeURIComponent(label || '');
 
-  // 2) Si no abrió, intentar tu link compartido de Waze (también suele saltar a la app)
-  setTimeout(() => {
-    if (appOpened) return;
-    openByAnchor(wazeShare, true);
-  }, 450);
+  if (isIOS) {
+    // 1) Universal link de Apple Maps (suele abrir la app)
+    openByAnchor(apple, true);
 
-  // 3) Si aún no, fallback definitivo a la app nativa del SO
-  setTimeout(() => {
-    document.removeEventListener('visibilitychange', onVis);
-    if (appOpened) return;
-    if (isIOS) {
-      // Apple Maps (tu URL exacta abre la APP)
-      openByAnchor(apple, true);
-    } else {
-      // Android → Google Maps (tu URL exacta; si está instalada, abre la APP)
-      openByAnchor(gmaps, true);
-    }
-  }, 1100);
+    // 2) Fallback a deep link de Apple Maps (app) si no abrió
+    setTimeout(() => {
+      if (appOpened) return;
+      const appleDeep = (lat && lng)
+        ? `maps://?daddr=${lat},${lng}&q=${encodedName}`
+        : `maps://?q=${encodedName}`;
+      openByAnchor(appleDeep, true);
+    }, 900);
+  } else {
+    // ANDROID
+    // 1) Universal link de Google Maps (suele abrir la app)
+    openByAnchor(gmaps, true);
+
+    // 2) Fallback a deep link de Android (app de mapas por defecto)
+    setTimeout(() => {
+      if (appOpened) return;
+      const geoDeep = (lat && lng)
+        ? `geo:${lat},${lng}?q=${lat},${lng}(${encodedName})`
+        : `geo:0,0?q=${encodedName}`;
+      openByAnchor(geoDeep, true);
+    }, 900);
+  }
 };
+
 
 
   return (
