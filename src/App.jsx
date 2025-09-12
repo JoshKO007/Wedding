@@ -79,36 +79,31 @@ export default function App() {
 
 
 /* =========================
-   ENLACES Y HELPER (sin Waze)
+   ENLACES Y HELPER (solo links)
    ========================= */
 
-// — Enlaces EXACTOS que ya tienes + coords para deep links (fallback a app)
-const CEREMONIA = {
-  label: `Église orthodoxe d'Antioche de la Vierge Marie`,
-  lat: 45.552677,
-  lng: -73.673486,
+// Ceremonia
+const CEREMONIA_LINKS = {
   apple: 'https://maps.apple.com/place?map=explore&address=10840+Rue+Laverdure%2C+Montreal+QC+H3L+2L9%2C+Canada&coordinate=45.552677%2C-73.673486&name=10840+Rue+Laverdure',
   gmaps: 'https://maps.app.goo.gl/qVWMaJcZeCUaYS8MA?g_st=ipc',
 };
 
-const CENA = {
-  label: 'Le Mitoyen',
-  lat: 45.528607,
-  lng: -73.820470,
+// Cena (Le Mitoyen)
+const CENA_LINKS = {
   apple: 'https://maps.apple.com/place?address=652%20Place%20Publique,%20Laval%20QC%20H7X%201G1,%20Canada&coordinate=45.528607,-73.820470&name=Le%20Mitoyen&place-id=I72AA040D42BCA13&map=explore',
   gmaps: 'https://maps.app.goo.gl/6iSqGKNEW4pNE5LDA?g_st=ipc',
 };
 
-// — Abre la app correspondiente: iOS → Apple Maps, Android → Google Maps,
-//   Desktop → Google Maps (web). Sin Waze.
-const openMapsPreferred = ({ label, lat, lng, apple, gmaps }) => {
+// Abre únicamente los links dados:
+// - iOS → Apple Maps (link de Apple)
+// - Android → Google Maps (link de Google)
+// - Desktop → Google Maps en nueva pestaña
+const openMapsLinksOnly = ({ apple, gmaps }) => {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
-  const isAndroid =
-    /android/i.test(ua) ||
-    (navigator.userAgentData && navigator.userAgentData.platform === 'Android');
+  const isAndroid = /android/i.test(ua);
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
 
   const openByAnchor = (url, targetSelf = true) => {
     const a = document.createElement('a');
@@ -121,47 +116,14 @@ const openMapsPreferred = ({ label, lat, lng, apple, gmaps }) => {
     a.remove();
   };
 
-  // Desktop → Google Maps web
-  if (!isAndroid && !isIOS) {
-    openByAnchor(gmaps, false);
-    return;
-  }
-
-  // Detectar si una app se abrió (el navegador pasa a 2º plano)
-  let appOpened = false;
-  const onVis = () => { if (document.hidden) appOpened = true; };
-  document.addEventListener('visibilitychange', onVis, { once: true });
-
-  const encodedName = encodeURIComponent(label || '');
-
   if (isIOS) {
-    // 1) Universal link de Apple Maps (suele abrir la app)
     openByAnchor(apple, true);
-
-    // 2) Fallback a deep link de Apple Maps (app) si no abrió
-    setTimeout(() => {
-      if (appOpened) return;
-      const appleDeep = (lat && lng)
-        ? `maps://?daddr=${lat},${lng}&q=${encodedName}`
-        : `maps://?q=${encodedName}`;
-      openByAnchor(appleDeep, true);
-    }, 900);
-  } else {
-    // ANDROID
-    // 1) Universal link de Google Maps (suele abrir la app)
+  } else if (isAndroid) {
     openByAnchor(gmaps, true);
-
-    // 2) Fallback a deep link de Android (app de mapas por defecto)
-    setTimeout(() => {
-      if (appOpened) return;
-      const geoDeep = (lat && lng)
-        ? `geo:${lat},${lng}?q=${lat},${lng}(${encodedName})`
-        : `geo:0,0?q=${encodedName}`;
-      openByAnchor(geoDeep, true);
-    }, 900);
+  } else {
+    openByAnchor(gmaps, false);
   }
 };
-
 
 
   return (
@@ -330,7 +292,7 @@ const openMapsPreferred = ({ label, lat, lng, apple, gmaps }) => {
     <p className="mt-3 text-sm text-stone-700">Eglise Orthodoxe d'Antioche</p>
 
 <button
-  onClick={() => openLocationStrict(CEREMONIA_LINKS)}
+  onClick={() => openMapsLinksOnly(CEREMONIA_LINKS)}
   className="btn-primary mt-3 inline-flex items-center gap-2"
   aria-label="Guardar ubicación de la ceremonia"
 >
@@ -360,7 +322,7 @@ const openMapsPreferred = ({ label, lat, lng, apple, gmaps }) => {
 
 {/* Botón Guardar ubicación */}
 <button
-  onClick={() => openLocationStrict(CENA_LINKS)}
+  onClick={() => openMapsLinksOnly(CENA_LINKS)}
   className="btn-primary mt-3 inline-flex items-center gap-2"
   aria-label="Guardar ubicación de la cena"
 >
