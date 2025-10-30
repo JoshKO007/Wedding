@@ -20,6 +20,7 @@ const HERO_BG =
   'https://images.unsplash.com/photo-1519741497674-611481863552?w=2000&auto=format&fit=crop';
 const HERO_VIDEO = '/video/hero.mp4'; // ⬅️ place your MP4 at /public/video/hero.mp4
 const MUSIC_SRC = '/audio/cancion.mp3'; // background music
+const IMGBB_API_KEY = '382075f64a888e8707d15009941b04be';
 
 const fechaStr = '2nd May, 2026 · 4:00 PM';
 const lugarStr = 'Église orthodoxe d´Antioche de la Vierge Marie';
@@ -215,6 +216,60 @@ export default function App() {
   const year = useMemo(() => new Date().getFullYear(), []);
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const toMaps = () => scrollTo('detalles');
+
+  // ===== Photo Upload to IMGBB =====
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+
+  const openUploader = () => fileInputRef.current?.click();
+
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = (reader.result || '').toString();
+      // Remove data URL prefix if present
+      const comma = res.indexOf(',');
+      resolve(comma >= 0 ? res.slice(comma + 1) : res);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const uploadToImgbb = async (base64, name) => {
+    const fd = new FormData();
+    fd.append('image', base64);
+    if (name) fd.append('name', name.replace(/\.[^.]+$/, ''));
+    const url = `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`;
+    const resp = await fetch(url, { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (!json?.success) throw new Error('Upload failed');
+    return json.data?.url || json.data?.display_url || '';
+  };
+
+  const onFilesSelected = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || uploading) return;
+    setUploading(true);
+    showToast(`Uploading ${files.length} photo${files.length>1?'s':''}…`);
+    try {
+      const base64s = await Promise.all(files.map(fileToBase64));
+      const results = await Promise.allSettled(base64s.map((b64, i) => uploadToImgbb(b64, files[i].name)));
+      const ok = results.filter(r => r.status === 'fulfilled').length;
+      const fail = results.length - ok;
+      showToast(`Uploaded ${ok}${fail?` • ${fail} failed`:''}`);
+      // Optional: open the last uploaded image in a new tab
+      const lastOk = results.reverse().find(r => r.status === 'fulfilled');
+      if (lastOk?.value) window.open(lastOk.value, '_blank', 'noopener');
+    } catch (err) {
+      console.error(err);
+      showToast('Sorry, upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+      // reset input to allow re-selecting the same files
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // === Toast helper ===
   const showToast = (text = 'Thanks! Your RSVP was sent.') => {
@@ -672,6 +727,41 @@ const openWaze = (wazeUrl) => {
     </section>
 
 
+
+        {/* Upload your wedding photos */}
+        <section id="fotos" className="scroll-mt-24 bg-gradient-to-b from-[#F7F3EC]/10 to-white/10 py-16 supports-[backdrop-filter]:backdrop-blur-sm">
+          <div className="mx-auto max-w-3xl px-6 text-center">
+            <motion.h2
+              initial={{ y: 20, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              className="font-display text-3xl text-stone-800"
+            >
+              Share your photos with us
+            </motion.h2>
+            <p className="mt-2 text-stone-700">Upload as many pictures as you like from the big day</p>
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <BurstButton
+                type="button"
+                className="btn-primary btn-anim px-8 py-3 text-base"
+                disabled={uploading}
+                onClick={openUploader}
+              >
+                {uploading ? 'Uploading…' : 'Upload wedding photos'}
+              </BurstButton>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={onFilesSelected}
+              className="hidden"
+              aria-hidden
+            />
+            <p className="mt-3 text-xs text-stone-500"></p>
+          </div>
+        </section>
 
         {/* RSVP (includes allergies) */}
         <section id="rsvp" className="scroll-mt-24 bg-gradient-to-t from-white/10 to-[#F7F3EC]/10 py-16 supports-[backdrop-filter]:backdrop-blur-sm">
