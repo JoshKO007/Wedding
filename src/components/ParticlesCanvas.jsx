@@ -1,5 +1,21 @@
 import { useEffect, useRef } from 'react';
 
+// Draw a heart (normalized around 0,0). `size` behaves like a radius.
+function drawHeart(ctx, x, y, size, color, alpha) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(size, size);
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.moveTo(0, -0.35);
+  ctx.bezierCurveTo(0.35, -0.7, 0.95, -0.2, 0, 0.55);
+  ctx.bezierCurveTo(-0.95, -0.2, -0.35, -0.7, 0, -0.35);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
 /** Simple particle background: soft circles that float upward and twinkle */
 export default function ParticlesCanvas() {
   const ref = useRef(null);
@@ -33,20 +49,11 @@ export default function ParticlesCanvas() {
         const a = p.alpha * (0.5 + Math.sin(p.tw) * 0.5);
         if (p.y + p.r < 0) p.y = height + p.r;
 
-        // soft glow
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
-        g.addColorStop(0, `rgba(244,63,94,${a})`);     // brand-500
-        g.addColorStop(1, 'rgba(244,63,94,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
-        ctx.fill();
+        // soft glow (heart halo)
+        drawHeart(ctx, p.x, p.y, p.r * 6, 'rgba(244,63,94,1)', a * 0.25);
 
-        // core
-        ctx.fillStyle = `rgba(255,255,255,${Math.min(1, a + 0.2)})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
+        // core (corazón principal)
+        drawHeart(ctx, p.x, p.y, p.r * 2.2, '#FFFFFF', Math.min(1, a + 0.35));
       }
       rafRef.current = requestAnimationFrame(draw);
     };

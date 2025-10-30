@@ -3,11 +3,9 @@ import { motion } from 'framer-motion';
 
 export default function NavBar({ onRSVPClick, onMapClick }) {
   const items = [
-    { id: 'inicio', label: 'Inicio' },
-    { id: 'historia', label: 'Historia' },
-    { id: 'detalles', label: 'Detalles' },
-    { id: 'galeria', label: 'Galería' },
-    { id: 'rsvp', label: 'RSVP' },
+    { id: 'Home', label: 'Home' },
+    { id: 'historia', label: 'Our Story' },
+    { id: 'detalles', label: 'The Celebration' },
   ];
 
   const scrollTo = (id) => {
@@ -37,11 +35,8 @@ export default function NavBar({ onRSVPClick, onMapClick }) {
                 {it.label}
               </button>
             ))}
-            <button onClick={onMapClick} className="btn-ghost text-sm">
-              Mapa
-            </button>
             <button onClick={onRSVPClick} className="btn-primary text-sm">
-              Confirmar <Sparkles className="ml-1 h-4 w-4" />
+              Attendance Confirmation <Sparkles className="ml-1 h-4 w-4" />
             </button>
           </nav>
         </div>
