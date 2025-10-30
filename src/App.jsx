@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ParticlesCanvas from './components/ParticlesCanvas.jsx';
 
@@ -19,17 +19,18 @@ const FECHA_EVENTO_ISO = '2026-05-02T16:00:00-06:00'; // ⬅️ UPDATED DATE
 const HERO_BG =
   'https://images.unsplash.com/photo-1519741497674-611481863552?w=2000&auto=format&fit=crop';
 const HERO_VIDEO = '/video/hero.mp4'; // ⬅️ place your MP4 at /public/video/hero.mp4
+const MUSIC_SRC = '/audio/cancion.mp3'; // background music
 
 const fechaStr = '2nd May, 2026 · 4:00 PM';
 const lugarStr = 'Église orthodoxe d´Antioche de la Vierge Marie';
 // Photos for "Our story"
 const fotos = [
-  { src: '/img/img1.jpeg', caption: 'First date', rotate: -4 },
-  { src: '/img/img2.jpeg', caption: 'Favorite trip', rotate: 3 },
-  { src: '/img/img3.jpeg', caption: 'Our song', rotate: -2 },
-  { src: '/img/img4.jpeg', caption: 'Unique moments', rotate: 4 },
-  { src: '/img/img5.jpeg', caption: 'Always together', rotate: -3 },
-  { src: '/img/img6.jpeg', caption: 'The best adventure', rotate: 2 },
+  { src: '/img/img1.jpeg', caption: '', rotate: -4 },
+  { src: '/img/img2.jpeg', caption: '', rotate: 3 },
+  { src: '/img/img3.jpeg', caption: '', rotate: -2 },
+  { src: '/img/img4.jpeg', caption: '', rotate: 4 },
+  { src: '/img/img5.jpeg', caption: '', rotate: -3 },
+  { src: '/img/img6.jpeg', caption: '', rotate: 2 },
 ];
 
 
@@ -169,6 +170,43 @@ function HeartsCanvas() {
 
 /* ========= App ========= */
 export default function App() {
+
+  // ===== Background music (autoplay best-effort, no UI controls) =====
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const a = new Audio(MUSIC_SRC);
+    a.loop = true;
+    a.preload = 'auto';
+    a.volume = 0.65; // moderately high by default
+    a.muted = false;
+    a.crossOrigin = 'anonymous';
+    audioRef.current = a;
+
+    const tryPlay = async () => { try { await a.play(); } catch {} };
+
+    // Try immediately (may be blocked), then on first interaction/visibility
+    tryPlay();
+
+    const kick = async () => {
+      await tryPlay();
+      window.removeEventListener('pointerdown', kick);
+      window.removeEventListener('keydown', kick);
+      document.removeEventListener('visibilitychange', kick);
+    };
+
+    window.addEventListener('pointerdown', kick);
+    window.addEventListener('keydown', kick);
+    document.addEventListener('visibilitychange', kick);
+
+    return () => {
+      window.removeEventListener('pointerdown', kick);
+      window.removeEventListener('keydown', kick);
+      document.removeEventListener('visibilitychange', kick);
+      try { a.pause(); } catch {}
+      audioRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     try { emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); } catch (e) {}
