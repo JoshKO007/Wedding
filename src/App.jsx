@@ -455,23 +455,85 @@ const openWaze = (wazeUrl) => {
   }
   @keyframes breathe {
     0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    50% { transform: scale(1.02); }
     100% { transform: scale(1); }
   }
+  /* Verse above the names — single, sober line */
+  .hero-verse{
+    display: inline-block; color:#fff; opacity:.9; font-style: italic; letter-spacing:.01em;
+    text-shadow: 0 1px 2px rgba(0,0,0,.25); white-space: nowrap; max-width: 100%;
+  }
+  /* Reference line under the verse */
+  .hero-verse-ref{
+    display:inline-block; color:#fff; opacity:.75; font-size:.9rem; letter-spacing:.08em;
+    text-transform:uppercase; text-shadow:0 1px 2px rgba(0,0,0,.2);
+  }
+  .hero-verse small{ opacity:.9 }
+  @media (max-width: 420px){
+    .hero-verse{ white-space: normal; }
+  }
+  /* Subheading above names */
+  .hero-subtitle{
+    display:inline-block; margin-top:.65rem; color:#fff; opacity:.95; letter-spacing:.08em;
+    text-transform:uppercase; font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,.25);
+  }
+
+  /* Invitation line just under names */
+  .hero-invite{
+    margin-top:.6rem; color:#fff; opacity:.9; font-weight:500; letter-spacing:.01em;
+    text-shadow:0 1px 2px rgba(0,0,0,.25);
+  }
+  .hero-invite::after{
+    content:''; display:block; height:1px; margin:.6rem auto 0; width:140px;
+    background:linear-gradient(90deg, #FF4F86, #EAD068); border-radius:2px; opacity:.9;
+    animation: heroUnderline .8s ease .25s both;
+  }
 `}</style>
+            <motion.p
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="hero-verse text-center mt-4"
+            >
+              “Therefore what God joined together, let not one separate”
+            </motion.p>
+            <motion.p
+              initial={{ y: 16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.03, duration: 0.5 }}
+              className="hero-verse-ref mt-1"
+            >
+              Mark 10:9
+            </motion.p>
+            <motion.p
+              initial={{ y: 16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.05, duration: 0.55 }}
+              className="hero-subtitle mt-3"
+            >
+              With joyous hearts
+            </motion.p>
             <motion.h1
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="hero-title mx-auto font-display text-5xl leading-tight text-white drop-shadow-lg sm:text-6xl"
+              className="hero-title mx-auto mt-2 font-display text-6xl leading-[1.05] text-white drop-shadow-lg sm:text-7xl"
             >
               Angeline <span className="text-[#C9A227]">&</span> Manuel
             </motion.h1>
             <motion.p
+              initial={{ y: 16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.08, duration: 0.55 }}
+              className="hero-invite text-white/95"
+            >
+              Request the honor of your presence to celebrate the wedding of their union
+            </motion.p>
+            <motion.p
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.6 }}
-              className="mt-3 text-lg text-white/90"
+              className="mt-5 text-lg text-white/90"
             >
               {fechaStr}
             </motion.p>
@@ -479,7 +541,7 @@ const openWaze = (wazeUrl) => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.15, duration: 0.6 }}
-              className="text-white/80"
+              className="mt-1 text-white/80"
             >
               {lugarStr}
             </motion.p>
