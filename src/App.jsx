@@ -22,7 +22,7 @@ const HERO_VIDEO = '/video/hero.mp4'; // ⬅️ place your MP4 at /public/video/
 const MUSIC_SRC = '/audio/cancion.mp3'; // background music
 const IMGBB_API_KEY = '382075f64a888e8707d15009941b04be';
 
-const fechaStr = '2nd May, 2026 · 4:00 PM';
+const fechaStr = '2nd May, 2026 · 3:30 PM';
 const lugarStr = 'Église orthodoxe d´Antioche de la Vierge Marie';
 // Photos for "Our story"
 const fotos = [
